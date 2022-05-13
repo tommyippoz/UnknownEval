@@ -23,7 +23,9 @@ TRAIN_VALIDATION_SPLIT = 0.5
 
 
 def get_classifiers(an_rate):
-    return fast_unsupervised_classifiers(an_rate)
+    list = fast_unsupervised_classifiers(an_rate)
+    list.extend(supervised_classifiers())
+    return list
 
 
 if __name__ == '__main__':
