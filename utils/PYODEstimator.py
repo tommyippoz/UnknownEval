@@ -33,3 +33,13 @@ class PYODEstimator(BaseEstimator, ClassifierMixin):
         X = check_array(X)
 
         return self.estimator.predict(X)
+
+    def predict_proba(self, X):
+
+        # Check is fit had been called
+        check_is_fitted(self)
+
+        # Input validation
+        X = check_array(X)
+
+        return self.estimator.predict_proba(X)

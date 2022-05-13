@@ -1,3 +1,4 @@
+import numpy
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -20,14 +21,17 @@ class Stacker(BaseEstimator, ClassifierMixin):
         stacking_data = []
 
         # Training base-level-learners
-        for learner in self.base_level_learners:
-            learner.fit(X)
+        for name, learner in self.base_level_learners:
+            learner.fit(X, y)
             stacking_data.append(learner.predict_proba(X))
 
-        print("OK")
+        stacking_data = numpy.concatenate(stacking_data, axis=1)
+        if self.use_training:
+            stacking_data = numpy.concatenate([X, stacking_data], axis=1)
 
+        # Trains meta-level learner
+        self.meta_level_learner.fit(stacking_data, y)
 
-        # Return the classifier
         return self
 
     def predict(self, X):
@@ -38,4 +42,14 @@ class Stacker(BaseEstimator, ClassifierMixin):
         # Input validation
         X = check_array(X)
 
-        return self.estimator.predict(X)
+        stacking_data = []
+
+        # Training base-level-learners
+        for name, learner in self.base_level_learners:
+            stacking_data.append(learner.predict_proba(X))
+
+        stacking_data = numpy.concatenate(stacking_data, axis=1)
+        if self.use_training:
+            stacking_data = numpy.concatenate([X, stacking_data], axis=1)
+
+        return self.meta_level_learner.predict(stacking_data)

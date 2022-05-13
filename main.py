@@ -39,6 +39,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from xgboost import XGBClassifier
 
 from utils.PYODEstimator import PYODEstimator
+from utils.Stacking import Stacker
 from utils.dataset_utils import load_tabular_dataset
 
 DATASETS_DIR = "datasets"
@@ -50,62 +51,81 @@ LABEL_NAME = 'multilabel'
 TRAIN_VALIDATION_SPLIT = 0.5
 
 
-def available_classifiers(outliers_fraction):
+def supervised_classifiers():
     class_list = []
-
-    estimators = [
-        ('ecod', PYODEstimator(estimator=ECOD(contamination=outliers_fraction))),
-        ('copod', PYODEstimator(estimator=COPOD(contamination=outliers_fraction)))]
-    class_list.append(["Stacking,UNS", StackingClassifier(estimators=estimators, final_estimator=XGBClassifier())])
-    class_list.append(["XGBoost Default,SUP", XGBClassifier()])
-
-    class_list.append(["ECOD,UNS", ECOD(contamination=outliers_fraction)])
-    # class_list.append(["test,UNS", KDE(contamination=outliers_fraction)]) LENTO
-    class_list.append(["Sampling,UNS", Sampling(contamination=outliers_fraction)])
-    #class_list.append(["test,UNS", CD(contamination=outliers_fraction)]) CRASHA
-    #class_list.append(["test,UNS", LMDD(contamination=outliers_fraction)]) LENTO
-    class_list.append(["LOF,UNS", LOF(contamination=outliers_fraction)])
-    #class_list.append(["test,UNS", COF(contamination=outliers_fraction)]) LENTO
-    class_list.append(["CBLOF,UNS", CBLOF(contamination=outliers_fraction)])
-    #class_list.append(["test,UNS", LOCI(contamination=outliers_fraction)]) LENTO
-    class_list.append(["kNN,UNS", KNN(contamination=outliers_fraction)])
-    #class_list.append(["test,UNS", SOD(contamination=outliers_fraction)]) CIUCCIA RISORSE
-    class_list.append(["ROD,UNS", ROD(contamination=outliers_fraction)])
-    #class_list.append(["test,UNS", OCSVM(contamination=outliers_fraction)])
-    class_list.append(["iForest,UNS", IForest(contamination=outliers_fraction)])
-    class_list.append(["FB,UNS", FeatureBagging(contamination=outliers_fraction)])
-    #class_list.append(["test,UNS", LSCP(contamination=outliers_fraction, detector_list=[COPOD(), ECOD()])]) LENTO
-    #class_list.append(["test,UNS", LODA(contamination=outliers_fraction)]) LENTO
-    class_list.append(["test,UNS", SUOD(contamination=outliers_fraction, base_estimators=[COPOD(), ECOD()])])
-
-    class_list.append(["test,SUP", PYODEstimator(estimator=COPOD(contamination=outliers_fraction))])
 
     # Supervised
     class_list.append(["Logistic Regression,SUP", LogisticRegression(random_state=0)])
     class_list.append(["NaiveBayes,SUP", GaussianNB()])
     class_list.append(["LDA,SUP", LinearDiscriminantAnalysis()])
     class_list.append(["XGBoost Default,SUP", XGBClassifier()])
-    # class_list.append(["Hist Boost,SUP", HistGradientBoostingClassifier()])
-    # class_list.append(["RandomForest 100,SUP", RandomForestClassifier(n_estimators=100, random_state=0)])
-    # class_list.append(["Decision Tree,SUP", DecisionTreeClassifier()])
-    #
-    # # Unsupervised
-    # class_list.append(["COPOD,UNS", COPOD(contamination=outliers_fraction)])
-    # class_list.append(["KMeans,UNS", KMeans(n_clusters=2)])
-    # class_list.append(["iForest,UNS", IsolationForest(contamination=outliers_fraction, warm_start=True)])
-    # class_list.append(["HBOS,UNS", HBOS(contamination=outliers_fraction)])
-    # class_list.append(["MCD,UNS", MCD(contamination=outliers_fraction)])
-    # class_list.append(["PCA,UNS", PCA(contamination=outliers_fraction, weighted=True)])
-    #
-    # # Unsupervised Bagging
-    # class_list.append(["B_COPOD,UNS", BaggingClassifier(base_estimator=PYODEstimator(estimator=COPOD(contamination=outliers_fraction)), n_estimators=10)])
-    # class_list.append(["B_KMeans,UNS", BaggingClassifier(base_estimator=PYODEstimator(estimator=KMeans(n_clusters=2)), n_estimators=10)])
-    # class_list.append(["B_iForest,UNS", BaggingClassifier(base_estimator=PYODEstimator(estimator=IsolationForest(contamination=outliers_fraction, warm_start=True)), n_estimators=10)])
-    # class_list.append(["B_HBOS,UNS", BaggingClassifier(base_estimator=PYODEstimator(estimator=HBOS(contamination=outliers_fraction)), n_estimators=10)])
-    # class_list.append(["B_MCD,UNS", BaggingClassifier(base_estimator=PYODEstimator(estimator=MCD(contamination=outliers_fraction)), n_estimators=10)])
-    # class_list.append(["B_PCA,UNS", BaggingClassifier(base_estimator=PYODEstimator(estimator=PCA(contamination=outliers_fraction, weighted=True)), n_estimators=10)])
+    class_list.append(["Hist Boost,SUP", HistGradientBoostingClassifier()])
+    class_list.append(["RandomForest 100,SUP", RandomForestClassifier(n_estimators=100, random_state=0)])
+    class_list.append(["Decision Tree,SUP", DecisionTreeClassifier()])
+
+    return class_list
 
 
+def fast_unsupervised_classifiers(outliers_fraction):
+    class_list = []
+
+    # Unsupervised
+    class_list.append(["COPOD,UNS", COPOD(contamination=outliers_fraction)])
+    class_list.append(["KMeans,UNS", KMeans(n_clusters=2)])
+    class_list.append(["iForest SK,UNS", IsolationForest(contamination=outliers_fraction, warm_start=True)])
+    class_list.append(["HBOS,UNS", HBOS(contamination=outliers_fraction)])
+    class_list.append(["MCD,UNS", MCD(contamination=outliers_fraction)])
+    class_list.append(["PCA,UNS", PCA(contamination=outliers_fraction, weighted=True)])
+    class_list.append(["ECOD,UNS", ECOD(contamination=outliers_fraction)])
+    class_list.append(["Sampling,UNS", Sampling(contamination=outliers_fraction)])
+    class_list.append(["LOF,UNS", LOF(contamination=outliers_fraction)])
+    class_list.append(["CBLOF,UNS", CBLOF(contamination=outliers_fraction)])
+    class_list.append(["kNN,UNS", KNN(contamination=outliers_fraction)])
+    class_list.append(["ROD,UNS", ROD(contamination=outliers_fraction)])
+    class_list.append(["iForest PYOD,UNS", IForest(contamination=outliers_fraction)])
+    class_list.append(["SUOD,UNS", SUOD(contamination=outliers_fraction, base_estimators=[COPOD(), ECOD()])])
+
+    return class_list
+
+
+def unsupervised_classifiers(outliers_fraction):
+    class_list = []
+
+    # Unsupervised
+    class_list.append(["COPOD,UNS", COPOD(contamination=outliers_fraction)])
+    class_list.append(["KMeans,UNS", KMeans(n_clusters=2)])
+    class_list.append(["iForest SK,UNS", IsolationForest(contamination=outliers_fraction, warm_start=True)])
+    class_list.append(["HBOS,UNS", HBOS(contamination=outliers_fraction)])
+    class_list.append(["MCD,UNS", MCD(contamination=outliers_fraction)])
+    class_list.append(["PCA,UNS", PCA(contamination=outliers_fraction, weighted=True)])
+    class_list.append(["ECOD,UNS", ECOD(contamination=outliers_fraction)])
+    class_list.append(["Sampling,UNS", Sampling(contamination=outliers_fraction)])
+    class_list.append(["LOF,UNS", LOF(contamination=outliers_fraction)])
+    class_list.append(["CBLOF,UNS", CBLOF(contamination=outliers_fraction)])
+    class_list.append(["kNN,UNS", KNN(contamination=outliers_fraction)])
+    class_list.append(["ROD,UNS", ROD(contamination=outliers_fraction)])
+    class_list.append(["iForest PYOD,UNS", IForest(contamination=outliers_fraction)])
+    class_list.append(["SUOD,UNS", SUOD(contamination=outliers_fraction, base_estimators=[COPOD(), ECOD()])])
+
+    return class_list
+
+
+def stacking_classifiers(base_level):
+    class_list = []
+
+    for [name, meta_level] in supervised_classifiers():
+        class_list.append(["Stacking-" + name + "-noT,Custom",
+                           Stacker(base_level_learners=base_level, meta_level_learner=meta_level, use_training=False)])
+        class_list.append(["Stacking-" + name + ",Custom",
+                           Stacker(base_level_learners=base_level, meta_level_learner=meta_level, use_training=True)])
+
+    return class_list
+
+
+def available_classifiers(outliers_fraction):
+    class_list = []
+    class_list.append(supervised_classifiers())
+    class_list.append(stacking_classifiers(unsupervised_classifiers(outliers_fraction)))
     return class_list
 
 
