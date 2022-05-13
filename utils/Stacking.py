@@ -22,7 +22,8 @@ class Stacker(BaseEstimator, ClassifierMixin):
 
         # Training base-level-learners
         for name, learner in self.base_level_learners:
-            learner.fit(X, y)
+            if not check_is_fitted(learner):
+                learner.fit(X, y)
             stacking_data.append(learner.predict_proba(X))
 
         stacking_data = numpy.concatenate(stacking_data, axis=1)
